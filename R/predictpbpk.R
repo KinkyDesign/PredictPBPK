@@ -25,7 +25,7 @@ predictpbpk <- function(dataset, rawModel, additionalInfo){
 
   init_comp = additionalInfo$comp
   for(i in comp)){
-    con = paste("C0",i , sep="")
+    con = paste("C0_", i, sep="")
     initial_concentration[i] = df[[con]]
   }
   weight = df$weight

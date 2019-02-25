@@ -23,9 +23,10 @@ predictpbpk <- function(dataset, rawModel, additionalInfo){
   # predFeat <- additionalInfo$predictedFeatures[1][[1]]
   predFeat <- additionalInfo$predictedFeatures
 
-  init_comp = additionalInfo$comp
-  for(i in comp)){
-    con = paste("C0_", i, sep="")
+  comp  <- additionalInfo$comp
+  initial_concentration <- rep(0,length(comp)) 
+  for(i in length(comp)){
+    con = paste("C0_", comp[i], sep="")
     initial_concentration[i] = df[[con]]
   }
   weight = df$weight

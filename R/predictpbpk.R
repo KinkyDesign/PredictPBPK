@@ -6,14 +6,24 @@
 predictpbpk <- function(dataset, rawModel, additionalInfo){
 
   n_comp <- length(additionalInfo$predictedFeatures) - 1
-  feats <- colnames(dataset$dataEntry[,2])
-  # feats <- colnames(dataset$dataEntry)
+  # Get feature keys (a key number that points to the url)
+  feat.keys <-  dataset$features$key
+  # Get feature names (actual name)
+  feat.names <- dataset$features$names
+  # Convert names from a factor list to a vector of characters
+  feat.names <- as.vector(unlist(lapply(feat.names, as.character)))
+  # Create a dataframe that includes the feature key and the corresponding name
+  key.match <- data.frame(cbind(feat.keys, feat.names), stringAsFactors = FALSE)
+  
+  # Initialize a dataframe with as many rows as the number of values per feature
   rows_data <- length(dataset$dataEntry$values[,2])
   df <- data.frame(matrix(0, ncol = 0, nrow = rows_data))
-  for(i in feats){
-    fe <- additionalInfo$independentFeatures[i][[i]]
+ 
+  for(key in feat.keys){
+    # For each key (feature) get the vector of values (of length 'row_data')
     feval <- dataset$dataEntry$values[i][,1]
-    df[fe] <- feval
+    # Name the column with the corresponding name that is connected with the key
+    df[key.match[key.match$feat.keys == i, 2]] <- feval
   }
 
   mod <- unserialize(base64_dec(rawModel))

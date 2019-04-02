@@ -6,14 +6,24 @@
 predictpbpk <- function(dataset, rawModel, additionalInfo){
 
   n_comp <- length(additionalInfo$predictedFeatures) - 1
-  feats <- colnames(dataset$dataEntry[,2])
-  # feats <- colnames(dataset$dataEntry)
+  # Get feature keys (a key number that points to the url)
+  feat.keys <-  dataset$features$key
+  # Get feature names (actual name)
+  feat.names <- dataset$features$names
+  # Convert names from a factor list to a vector of characters
+  feat.names <- as.vector(unlist(lapply(feat.names, as.character)))
+  # Create a dataframe that includes the feature key and the corresponding name
+  key.match <- data.frame(cbind(feat.keys, feat.names), stringAsFactors = FALSE)
+  
+  # Initialize a dataframe with as many rows as the number of values per feature
   rows_data <- length(dataset$dataEntry$values[,2])
   df <- data.frame(matrix(0, ncol = 0, nrow = rows_data))
-  for(i in feats){
-    fe <- additionalInfo$independentFeatures[i][[i]]
+ 
+  for(key in feat.keys){
+    # For each key (feature) get the vector of values (of length 'row_data')
     feval <- dataset$dataEntry$values[i][,1]
-    df[fe] <- feval
+    # Name the column with the corresponding name that is connected with the key
+    df[key.match[key.match$feat.keys == i, 2]] <- feval
   }
 
   mod <- unserialize(base64_dec(rawModel))
@@ -23,9 +33,10 @@ predictpbpk <- function(dataset, rawModel, additionalInfo){
   # predFeat <- additionalInfo$predictedFeatures[1][[1]]
   predFeat <- additionalInfo$predictedFeatures
 
-  initial_concentration = rep(0, n_comp)
-  for(i in 1:length(initial_concentration)){
-    con = paste("y", i, sep="")
+  comp  <- additionalInfo$comp
+  initial_concentration <- rep(0,length(comp)) 
+  for(i in length(comp)){
+    con = paste("C0_", comp[i], sep="")
     initial_concentration[i] = df[[con]]
   }
   weight = df$weight
@@ -37,22 +48,22 @@ predictpbpk <- function(dataset, rawModel, additionalInfo){
   sample_time <- c(0, 5/60, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 10, 12, 24, 36, 48, 72) # in hours
   solution <- ode(y = initial_concentration, times = sample_time, func = odemodel, parms = params)
 
-  comp_names <- rep(0, n_comp + 1)
-  comp_short <- rep(0, n_comp + 1)
-  pred_names <- rep(0, n_comp + 1)
-  for(i in 1:length(comp_names)){
-    comp_names[i] <- additionalInfo$predictedFeatures[[i]]
-    comp_short[i] <- as.integer(strsplit(additionalInfo$predictedFeatures[[i]], "_")[[1]])
-    pred_names[i] <- names(additionalInfo$predictedFeatures)[i]
-  }
-  comp_all <- data.frame(cbind(comp_names, comp_short, pred_names))
-  comp_all_s <- comp_all[order(comp_short),][,1]
+  #comp_names <- rep(0, n_comp + 1)
+  #comp_short <- rep(0, n_comp + 1)
+  #pred_names <- rep(0, n_comp + 1)
+  #for(i in 1:length(comp_names)){
+  #  comp_names[i] <- additionalInfo$predictedFeatures[[i]]
+  #  comp_short[i] <- as.integer(strsplit(additionalInfo$predictedFeatures[[i]], "_")[[1]])
+  #  pred_names[i] <- names(additionalInfo$predictedFeatures)[i]
+  #}
+  #comp_all <- data.frame(cbind(comp_names, comp_short, pred_names))
+  #comp_all_s <- comp_all[order(comp_short),][,1]
 
 
 
   for(i in 1:dim(solution)[1]){
     prediction<- data.frame(t(solution[i,]))
-    colnames(prediction)<- comp_all_s
+    colnames(prediction)<- c("time", comp)
     if(i==1){lh_preds<- list(unbox(prediction))
     }else{
       lh_preds[[i]]<- unbox(prediction)
